@@ -1,5 +1,4 @@
 import express from 'express';
-import { pathToFileURL } from 'node:url';
 import config, { validateConfig, configWarnings } from './config.js';
 import logger from './lib/logger.js';
 import { HttpError } from './lib/errors.js';
@@ -91,11 +90,10 @@ export function start() {
   return server;
 }
 
-// Start when run directly (node src/server.js), not when imported by tests.
-// pathToFileURL handles Windows paths (backslashes, drive letters) correctly,
-// unlike a manual `file://` + argv[1] string comparison.
-const invokedDirectly =
-  process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
-if (invokedDirectly) {
+// This module is the application entry point — nothing in the codebase imports
+// it (tests import createApp / individual modules instead). So we start
+// unconditionally, which is robust across all platforms (Windows/macOS/Linux).
+// Set BOGBUS_NO_AUTOSTART=1 to import this file without booting a server.
+if (!process.env.BOGBUS_NO_AUTOSTART) {
   start();
 }
