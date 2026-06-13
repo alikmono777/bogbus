@@ -99,6 +99,21 @@ export function configWarnings() {
       'APP_URL is not HTTPS. BOG requires HTTPS callback/redirect URLs in production.',
     );
   }
+  if (config.shopify.enabled) {
+    if (!/^shpat_/.test(config.shopify.adminToken)) {
+      warnings.push(
+        'SHOPIFY_ADMIN_TOKEN does not start with "shpat_". You likely copied the API key or ' +
+          'API secret key instead of the Admin API access token (Develop apps → your app → ' +
+          'API credentials → Install app → Admin API access token).',
+      );
+    }
+    if (!/\.myshopify\.com$/.test(config.shopify.shop)) {
+      warnings.push(
+        `SHOPIFY_SHOP is "${config.shopify.shop}". It should be the store's *.myshopify.com ` +
+          'domain (e.g. your-store.myshopify.com), not a custom domain.',
+      );
+    }
+  }
   return warnings;
 }
 
