@@ -58,8 +58,14 @@ const config = {
   },
 };
 
-/** True when Shopify Admin API credentials are present. */
-config.shopify.enabled = Boolean(config.shopify.shop && config.shopify.adminToken);
+/**
+ * True when Shopify Admin API credentials are present AND not explicitly
+ * disabled. Set DISABLE_SHOPIFY=true to force BOG-only mode (test BOG payments
+ * without touching Shopify) while keeping your Shopify vars in .env.
+ */
+config.shopify.disabled = bool(process.env.DISABLE_SHOPIFY, false);
+config.shopify.enabled =
+  !config.shopify.disabled && Boolean(config.shopify.shop && config.shopify.adminToken);
 
 /**
  * Validate configuration for the current mode. Returns an array of human
@@ -90,8 +96,11 @@ export function configWarnings() {
     );
   }
   if (!config.shopify.enabled) {
+    const reason = config.shopify.disabled
+      ? 'DISABLE_SHOPIFY=true'
+      : 'Shopify credentials missing';
     warnings.push(
-      'Shopify credentials missing — running in BOG-only mode. /checkout will accept a raw amount and will NOT create or complete Shopify orders.',
+      `${reason} — running in BOG-only mode. /checkout accepts a raw amount and will NOT create or complete Shopify orders.`,
     );
   }
   if (config.app.url.startsWith('http://')) {
