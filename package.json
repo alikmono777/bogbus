@@ -1,0 +1,21 @@
+{
+  "name": "bogbus",
+  "version": "1.0.0",
+  "description": "Shopify payment integration for Bank of Georgia (BOG) Online Payment API — hosted payment page + draft orders.",
+  "type": "module",
+  "engines": {
+    "node": ">=18.17"
+  },
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "test": "node --test",
+    "demo:order": "node scripts/create-test-order.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2"
+  },
+  "license": "MIT"
+}
