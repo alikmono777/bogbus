@@ -1,4 +1,5 @@
 import express from 'express';
+import { pathToFileURL } from 'node:url';
 import config, { validateConfig, configWarnings } from './config.js';
 import logger from './lib/logger.js';
 import { HttpError } from './lib/errors.js';
@@ -91,6 +92,10 @@ export function start() {
 }
 
 // Start when run directly (node src/server.js), not when imported by tests.
-if (import.meta.url === `file://${process.argv[1]}`) {
+// pathToFileURL handles Windows paths (backslashes, drive letters) correctly,
+// unlike a manual `file://` + argv[1] string comparison.
+const invokedDirectly =
+  process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+if (invokedDirectly) {
   start();
 }
