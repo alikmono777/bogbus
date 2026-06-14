@@ -1,6 +1,7 @@
 import express from 'express';
 import config from '../config.js';
 import { createCheckout } from '../services/payments.js';
+import shopify from '../shopify/client.js';
 
 const router = express.Router();
 
@@ -23,6 +24,57 @@ router.get('/', (req, res) => {
 
 /** GET /healthz — liveness probe. */
 router.get('/healthz', (req, res) => res.json({ status: 'ok' }));
+
+/**
+ * GET /debug/shopify — verify Shopify credentials and show which store the
+ * token belongs to. Use this to diagnose 401 "Invalid API key or access token".
+ */
+router.get('/debug/shopify', async (req, res) => {
+  if (!config.shopify.enabled) {
+    return res.json({
+      ok: false,
+      reason: config.shopify.disabled
+        ? 'Shopify is disabled (DISABLE_SHOPIFY=true).'
+        : 'Shopify is not configured (SHOPIFY_SHOP / SHOPIFY_ADMIN_TOKEN missing).',
+    });
+  }
+  const tokenPrefix = config.shopify.adminToken.slice(0, 6);
+  const hints = [];
+  if (!/^shpat_/.test(config.shopify.adminToken)) {
+    hints.push(
+      `Your token starts with "${tokenPrefix}". A valid Admin API access token starts with "shpat_". ` +
+        'shpss_ = API secret key (wrong), shpca_ = client id (wrong). Use the "Admin API access token" from API credentials.',
+    );
+  }
+  if (!/^\d{4}-\d{2}$/.test(config.shopify.apiVersion)) {
+    hints.push(
+      `SHOPIFY_API_VERSION="${config.shopify.apiVersion}" is invalid. Use a date version like "2025-01".`,
+    );
+  }
+  try {
+    const shop = await shopify.getShop();
+    const matches = shop.myshopifyDomain === config.shopify.shop;
+    return res.json({
+      ok: true,
+      configuredShop: config.shopify.shop,
+      tokenShop: shop.myshopifyDomain,
+      shopMatchesToken: matches,
+      shopName: shop.name,
+      apiVersion: config.shopify.apiVersion,
+      ...(matches ? {} : { warning: 'Token belongs to a DIFFERENT store than SHOPIFY_SHOP.' }),
+    });
+  } catch (err) {
+    return res.status(200).json({
+      ok: false,
+      configuredShop: config.shopify.shop,
+      tokenPrefix,
+      apiVersion: config.shopify.apiVersion,
+      error: err.message,
+      details: err.details,
+      hints,
+    });
+  }
+});
 
 /** GET /demo — minimal test form to drive a checkout end-to-end. */
 router.get('/demo', (req, res) => {

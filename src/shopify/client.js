@@ -88,6 +88,16 @@ export async function createDraftOrder(input) {
   return data.draftOrderCreate.draftOrder;
 }
 
+/**
+ * Read the shop the current token belongs to. Handy for diagnosing 401s:
+ * if myshopifyDomain != SHOPIFY_SHOP, the token is from a different store.
+ */
+export async function getShop() {
+  const query = `query bogusShop { shop { name myshopifyDomain primaryDomain { host } } }`;
+  const data = await graphql(query);
+  return data.shop;
+}
+
 /** Read a draft order's total and status (used to validate the paid amount). */
 export async function getDraftOrder(id) {
   const query = `
@@ -137,6 +147,7 @@ export function toDraftOrderGid(id) {
 }
 
 export default {
+  getShop,
   createDraftOrder,
   getDraftOrder,
   completeDraftOrder,
